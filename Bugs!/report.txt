@@ -1,0 +1,174 @@
+Marko Sevo CS32 Project 3 Report
+
+1.
+Actor)
+doSomething: This function is pure virtual because StudentWorld calls this function on every actor and so every derived class must define it even if it does nothing.
+
+isDead: Every actor needs to be able to return whether it is dead or not, so it is virtual.
+
+blocksMovement: Every actor needs to return whether it blocks an insect’s movement or not, so it is virtual.
+
+getBitten: Only insects can get bitten, but this is virtual and in the Actor class because StudentWorld calls the specific getBitten action of different insects through polymorphism.
+
+getPoisoned: Only insects can get poisoned (not adult grasshoppers), but this is virtual and in the Actor class because StudentWorld calls the specific getBitten action of different insects through polymorphism.
+
+getStunned: Only insects can get stunned (not adult grasshoppers), but this is virtual and in the Actor class because StudentWorld calls the specific getBitten action of different insects through polymorphism.
+
+isEdible: This is used by StudentWorld to determine whether a given actor is food or some other class, so it returns false and is virtual.
+
+isPheromone: Only the Pheromone class with the given colony returns true, while all other actors must define this as false, so it returns false and is virtual (it is in Actor so StudentWorld can call this on Actor pointers).
+
+isPoison: Only the Poison class returns true, while all other actors must define this as false, so it returns false and is virtual (it is in Actor so StudentWorld can call this on Actor pointers).
+
+isWater: Only the Water class returns true, while all other actors must define this as false, so it returns false and is virtual (it is in Actor so StudentWorld can call this on Actor pointers).
+
+isEnemy: Only enemy classes (grasshoppers, enemy ants) return true, while all other actors must define this as false, so it returns false and is virtual (it is in Actor so StudentWorld can call this on Actor pointers).
+
+isDangerous: Only dangerous classes (grasshoppers, poison, water, enemy ants) return true, while all other actors must define this as false, so it returns false and is virtual (it is in Actor so StudentWorld can call this on Actor pointers).
+
+is Anthill: Only the Anthill class returns true, while all other actors must define this as false, so it returns false and is virtual (it is in Actor so StudentWorld can call this on Actor pointers).
+
+getEnergy: This is defined as virtual in the Actor class so that StudentWorld can access it, so here it does nothing, but when defined in derived classes will return the energy level of the actor.
+
+updateEnergy: This is defined as virtual in the Actor class so that StudentWorld can access it, so here it does nothing, but when defined in derived classes will update the energy level of the actor.
+
+getWorld: Returns a pointer to the StudentWorld object because basically every derived class needs to access it, and is not virtual because it works the same for all Actors.
+
+getDoSomethingCalled: Checks whether this actor was already called to do something this tick, and is not virtual because it works the same for all Actors.
+
+setDoSomethingCalled: Sets whether or not this actor was already called to do something this tick, and is not virtual because it works the same for all Actors.
+
+Pebble)
+doSomething: does nothing, it is a pebble, but must be defined to do nothing since doSomething() in the Actor class is pure virtual.
+
+blocksMovement: returns true because this is the only actor that blocks insect movement, and is virtual because it redefines this from the Actor class which returns false.
+
+EnergyHolder)
+doSomething: does nothing as an EnergyHolder, but must be defined to do nothing since doSomething() in the Actor class is pure virtual. Defining EnergyHolders to do nothing with this virtual function also saves us from defining an empty doSomething across classes like Food, Poison, and Water but instead to just have it here, and allows other classes like Anthill to define their own doSomething().
+
+isDead: returns whether this EnergyHolder is dead because every energyHolder is dead or alive depending on its energy, and is virtual because it redefines Actor’s version for EnergyHolders specifically.
+
+setDead: makes this EnergyHolder dead, and is not virtual because functionality is the same across all derived classes.
+
+getEnergy: returns the energy of this EnergyHolder, and is virtual because it redefines Actor’s version for EnergyHolders specifically.
+
+updateEnergy: all derived classes of EnergyHolder need to be able to change their energy level through this funciton, and is virtual because it redefines Actor’s version for EnergyHolders specifically.
+
+addFood: EnergyHolders sometimes need to add food to their location when they die among other things, and this action does that without being virtual because functionality is the same across all derived classes.
+
+pickUpAndEatFood: EnergyHolders can also replenish energy by eating food on their location with this function, which is not virtual because the functionality is the same across all derived classes.
+
+becomesFoodUponDead: Returns false (doesn’t leave food in location when actor dies) for energy holders in general, but is defined as virtual so a class like Insect could redefine it as returning true.
+
+Food)
+isEdible: returns true because it is food, and is virtual because it redefines this from the Actor class which simply returns false.
+
+Anthill)
+doSomething: this updates the anthills energy (minus one energy point), makes it eat food if it can, and makes it create more ants if it has enough energy, and is virtual because it redefines this from the EnergyHolder class’s empty doSomething().
+
+isAntHill: returns true if it is the anthill of the given colony number, and is virtual because it redefines this from the Actor class which simply returns false.
+
+Pheromone)
+doSomething: reduces the energy level of this pheromone by 1, and is virtual because it redefines this from the EnergyHolder class’s empty doSomething().
+
+isPheromone: returns true if is the pheromone of the given colony number, and is virtual because it redefines this from the Actor class which simply returns false.
+
+TriggerableActor)
+isDangerous: returns true because waterpool and poison which are derived from it are both dangerous, and is virtual because it redefines this from the Actor class which simply returns false.
+
+WaterPool)
+isWater: returns true because it is a water pool, and is virtual because it redefines this from the Actor class which simply returns false.
+
+Poison)
+isPoison: returns true because it is poison, and is virtual because it redefines this from the Actor class which simply returns false.
+
+Insect)
+getBitten: decreases energy level of insect by amount, and is virtual because it redefines this from the Actor class which does nothing and so that it can be specialized further by derived classes like Ant.
+
+getPoisoned: decreases energy level of insect by 150, and is virtual because it redefines this from the Actor class which does nothing.
+
+getStunned: increases ticks that insect will be stunned, and is virtual because it redefines this from the Actor class which does nothing.
+
+getSunnedTicks: returns how many ticks object has left to be stunned for, and is not virtual because functionality is the same across all derived classes.
+
+setStunnedTicks: sets how many ticks insect will be stunned for, and is not virtual because functionality is the same across all derived classes.
+
+becomesFoodUponDead: returns true because all insects become food when they die, and is virtual because it redefines this from the Actor class which returns false.
+
+getXYInFrontOfMe: gets the coordinates of the position in front of where the insect is facing, and is not virtual because functionality is the same across all derived classes.
+
+moveForwardIfPossible: makes Insect try to move toward the direction its facing, returns true if successful and false if not, and is virtual so that classes like Ant and Baby Grasshopper can specialize its functionality.
+
+getDistanceToWalk: gets how far insect has left to walk in its direction, and is not virtual because functionality is the same across all derived classes.
+
+setDistanceToWalk: changes how far insect as left to walk in its direction, and is not virtual because functionality is the same across all derived classes.
+
+Ant)
+doSomething: either moves, eats food, drops food, bites an enemy, emits a pheromone, faces a random direction, rotates clockwise, rotates counterclockwise, generates random number, goes to another command, or determines whether one of many if statements is true (if statements including checking its last random number generated was zero, if it is carrying food, hungry, standing with enemy, standing on food, standing on its anthill, if it smells a pheromone in front of it, if it smells danger in front of it, if it was bitten and hasn’t moved since then, and if it was blocked from moving and hasn’t moved since then). It is virtual because it redefines this from the EnergyHolder class’s empty doSomething().
+
+isEnemy: returns true if it is not of the same colony given because then it is an enemy, returns false otherwise, and is virtual because it redefines this from the Actor class which simply returns false.
+
+isDangerous: returns true if it not of the same colony given because then it is dangerous, returns false otherwise, and is virtual because it redefines this from the Actor class which simply returns false.
+
+moveForwardIfPossible: move forward if it can, set that it wasn’t blocked from moving and wasn’t bitten if move is successful, and get stunned/poisoned if there is a waterpool/poison at new location. It is virtual because it specializes the moveForwardIfPossible() function defined in Insect.
+
+getBitten: get bitten by a certain amount and set counter that it got bitten. It is virtual because it specializes the getBitten(int amt) function defined in Insect.
+
+Grasshopper)
+doSomething: the grasshopper first loses an energy point, then sees if it still stunned, if not then it does a different action depending on whether it is a baby or adult grasshopper, then if the function has not yet returned it tries to eat any food its on, possibly sleeps if it does eat, then if still has not returned walks in the direction it is facing, then increases stunned ticks by 2. It is virtual because it redefines this from the EnergyHolder class’s empty doSomething().
+
+specificDoSomething: pure virtual because adult and baby grasshoppers need to specifically define this function with specialized tasks.
+
+isEnemy: all grasshoppers are always enemies so returns true, and is virtual because it redefines this from the Actor class which simply returns false.
+
+isDangerous: all grasshoppers are always dangerous so returns true, and is virtual because it redefines this from the Actor class which simply returns false.
+
+AdultGrasshopper)
+getPoisoned: does nothing because adult grasshoppers don’t get poisoned, and is virtual because it redefines this from the Insect class which actually makes the Insect lose energy.
+
+getStunned: does nothing because adult grasshoppers don’t get stunned, and is virtual because it redefines this from the Insect class which actually makes the Insect stunned.
+
+specificDoSomething: grasshopper first tries biting an insect on the same square as it with a 1 in 3 chance of doing so, then if it didn’t bite has a 1 in 10 chance of jumping to another square in a circle of radius 10 around it. It is virtual because it redefines the pure virtual specificDoSomething() function in the Grasshopper class.
+
+getBitten: calls Insect’s getBitten function first to make it lose energy, and and then it has a 1 in 2 chance of biting an insect on the same square as it. It is virtual because it takes Insect’s getBitten function, calls it, but then also adds the more specialized action of possibly biting back because it is an AdultGrasshopper.
+
+BabyGrasshopper)
+specificDoSomething: if the baby has 1600 energy or over, it transforms into an adult grasshopper, creating a new AdultGrasshopper object in the same location and deleting the BabyGrasshopper object. It is virtual because it redefines the pure virtual specificDoSomething() function in the Grasshopper class.
+
+moveForwardIfPossible: move forward if it can and get stunned/poisoned if there is a waterpool/poison at new location. It is virtual because it specializes the moveForwardIfPossible() function defined in Insect.
+
+
+2. I finished all functionality.
+
+3. Something that was not specific by the spec was how many spaces to put between the “Ticks: 319 -“ and the first ant colony name. It said to put two spaces BETWEEN each ant colony name, but not how many after the dash following the tick count, so I put two there as well.
+Another thing that the spec did not specifically define was when creating a new actor, I did not call doSomething on it right away because that made debugging easier as I could more conveniently test Actor’s doSomething functions, and it also kept the code cleaner for the most part.
+When programming the Ant’s doSomething function, specifically the if_command part that checks if the ant is standing on food, the spec was not specific as to whether this should be true if the food is dead. There could have been food there that was eaten on the same tick as but before the Ant’s doSomething function was called, but has not yet been cleared from the data structure, so I just added an extra condition to check whether the food was not dead if I were to return true.
+
+4.
+Actor) The Actor class was the medium through which all the derived classes interacted with StudentWorld and its data structure of all objects. Most of Actor’s functions simply did nothing or returned a simply value of false if not specifically defined in derived classes. A lot of the functions checked whether or not an Actor pointer was a specific derivied class, and it would always return false except for the one derived class that redefined it to return true (such as food redefining isEdible() to return true). The way I tested this was playing the game frame by frame and using breakpoints to see if the correct functions were called when needed. For example, when an actor of one type would approach another, I would go frame by frame and see if it recognized a food object or water pool for example only when it should.
+
+Pebble) This class was pretty simple to test because all it does is make sure that insects don’t go on top of it, so I simply had to check enough times that when an Insect interacted with a location with a pebble on it, it would always recognize that there was a pebble there and not move to it.
+
+EnergyHolder: For this class I would constantly be printing out the energy of the energyHolder actors and whether they were dead. This allowed me to investigate whether actors were gaining and losing energy appropriately, be it every tick or when they get bit or picking up food. Break points allowed me to get to the function/actor I wanted to test, then I would start going frame by frame and analyzing the energy levels and making sure they were what they needed to be. This is the main purpose of the EnergyHolder class, as well as functions like addFood and pickUpAndEatFood. These functions, for example had to do with food objects, so I would print out the list of all objects at a location repeatedly before, during, and after these functions would be called to see if food objects were correctly handled (no more than one per location, creating a new one of one wasn’t there before, etc).
+
+Food) This was an easy class to test because I just had to make sure it was being recognized as food, and most of that hard work happened when I had the Actor class working (the isEdible function). This class itself did not do much, but a lot of other classes interacted with the Food class so it was important to test whether the energy levels of this class were appropriately manipulated through breakpoints and logs, and I also had to make sure that there was never more than one Food object created on the same location (printing out the lists of objects at these locations helped me test this).
+
+Anthill) For this anthill I would look at the energy levels because that was key in understanding what it was doing. For example, if it was making ants when it didn’t have enough energy, I knew there was a problem. So making sure the energy of this class was updated appropriately by checking with breakpoints and logs I was able to determine that its functionality would therefore be perfect. I also had to test its interactions with ants of its own kind by making sure that when isAnthill was called that it always returned the correct result, but again most of this interaction had to do with the Actor class and StudentWorld.
+
+Pheromone) For this class there were only a few key traits I had to test; I had to make sure it consistently identified as a pheromone when interacting with other actors and simple breakpoints helped perfectly with that. I also had to make sure it lost one energy point every tick and again that was very easy to understand by printing out its energy levels. The last crucial feature of this class was making sure there was only one pheromone object of the same colony on a given location, and that its energy did not exceed 768.
+
+TriggerableActor) This class mostly just combines the waterpool and poison class by determining they are dangerous. Since this is a simple in line boolean expression, it was simple to determine with breakpoints and logs whether it was being called when needed.
+
+WaterPool) This class simply had to make sure that it was always being identified as a water pool, and its functionality was implemented elsewhere. That was also simple to test because all it did was increase the counter of how many ticks and insect would sleep, and breakpoints/logs helped me determine whether it slept for long enough.
+
+Poison) Again, the functionality of this was implemented not directly through this class, so this class simply had to make sure it was always being identified as poison. The functionality implemented elsewhere was also fairly straightforward, it had to decrease the energy levels of a few specific types of objects when they move onto it, and printing out logs of the energy levels of all objects involved allowed me to see if everything worked smoothly.
+
+Insect) Breakpoints, logs, and going frame by frame was the key to developing the insect. Comparing it to your guys simple version of the game was also key. I was able to see if it was acting as intended and not doing anything visibly different then your version. After I was certain it was basically correct in functionality, the nitty gritty number by number details were solved the only was possible: logs and breakpoints. An Insect’s energy levels, whether it moved correctly, whether it was stunned when it needed to be, etc, was all solved with a frame by frame analysis of its actions and when it chose to do what it did.
+
+Ant) For this class I made my own dummy ant program that was not too smart but allowed me to test all the functions of the ant in all scenarios. First I also tested with one ant colony, checking if the ant was moving right, interacting with poison, dropping pheromones, eating food, etc. Then I added more than one ant colony to see if it continued to behave as expected. When it would get close to an ant, I would go frame by frame and put breakpoints on all the functions that happen between these interactions, and i was able to see whether it turned away from danger, bit when it had to, etc. Very careful examination of all possibilities was key in testing the ant.
+
+Grasshopper) The grasshopper class had less to do with actual gameplay because it wasnt an actual actor. What i had to do was look at baby and adult grasshoppers and determine if the common functions between them were being called correctly. The specificDoSomething function was not examined here because that is what differentiated what a baby and adult grasshopper did. Instead, the basic functionality of all grasshoppers such as moving and eating food was tested by following a single grasshopper as it makes its way on the map and interacts with food. Breakpoints and logs of course being necessary.
+
+AdultGrasshopper) The biggest thing needed to be tested with this class was its jump function because that is really all that was different from the baby grasshopper class (besides biting, which is mostly done not by grasshopper class). I had to put a lot of adult grasshoppers on the map to determine if in all scenarios, especially near walls, it jumped somewhere onto the field with no pebble.
+
+BabyGrasshopper) Turning into a grasshopper was the most important part of testing this. I had to make sure that the baby grasshopper correctly determined when to transform and was deleted after successfully making an adult grasshopper. I also had to make sure that calling the specificDoSomething function did not interfere with the rest of the doSomething function called by the base grasshopper class.
