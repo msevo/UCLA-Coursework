@@ -1,6 +1,4 @@
-NAME: Marko Sevo
-EMAIL: marko.sevo7@gmail.com
-ID: 704833042
+Multithreaded program written in C to maximize efficiency of linked list operations, while testing race conditions and synchronization.
 
 QUESTION 2.3.1)
 In the 1 and 2-thread synchronized list cases, most of the cpu cycles are being spent on code in the critical sections. Because there are only 1 or 2 threads, not a lot of cycles are actually spent on threads waiting for the locks, but within the 1000 iteration loops of the critical sections themselves.
