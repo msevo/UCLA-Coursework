@@ -1,0 +1,172 @@
+Total: 3290 samples
+    3231  98.2%  98.2%     3290 100.0% threadFunc
+      28   0.9%  99.1%       30   0.9% SortedList_lookup
+      23   0.7%  99.8%       23   0.7% __strcmp_sse42
+       6   0.2%  99.9%       28   0.9% SortedList_insert
+       1   0.0% 100.0%        1   0.0% SortedList_length
+       1   0.0% 100.0%        1   0.0% _init
+       0   0.0% 100.0%     3290 100.0% __clone
+       0   0.0% 100.0%       30   0.9% lookupAndDelete
+       0   0.0% 100.0%     3290 100.0% start_thread
+ROUTINE ====================== threadFunc in /u/cs/ugrad/sevo/111CS/2Project/lab2_list.c
+  3231   3290 Total samples (flat / cumulative)
+     .      .   40:     fprintf(stderr, "Error while deleting element; list corrupted.\n");
+     .      .   41:     exit(2);
+     .      .   42:   }
+     .      .   43: }
+     .      .   44: 
+---
+     .      .   45: void* threadFunc (void *index) {
+     .      .   46:   int threadNum = *((int*)index);
+     .      .   47:   
+     .      .   48:   for (int i = threadNum; i < numElements; i += numThreads) {
+     .      .   49:     switch (syncArg) {
+     .      .   50:       case 'm':
+     .      .   51:         pthread_mutex_lock(&mutex);
+     .      .   52:         SortedList_insert(list, &listElements[i]);
+     .      .   53:         pthread_mutex_unlock(&mutex);
+     .      .   54:         break;
+     .      .   55: 
+     .      .   56:       case 's':
+  1660   1660   57:         while(__sync_lock_test_and_set(&spinLock, 1));
+     .     28   58:         SortedList_insert(list, &listElements[i]);
+     .      .   59:         __sync_lock_release(&spinLock);
+     .      .   60:         break;
+     .      .   61: 
+     .      .   62:       default:
+     .      .   63:         SortedList_insert(list, &listElements[i]);
+     .      .   64:         break;
+     .      .   65:     }
+     .      .   66:   }
+     .      .   67: 
+     .      .   68:   int retValue = 0;
+     .      .   69:   switch (syncArg) {
+     .      .   70:     case 'm':
+     .      .   71:       pthread_mutex_lock(&mutex);
+     .      .   72:       retValue = SortedList_length(list);
+     .      .   73:       pthread_mutex_unlock(&mutex);
+     .      .   74:       break;
+     .      .   75:       
+     .      .   76:     case 's':
+     6      6   77:       while(__sync_lock_test_and_set(&spinLock, 1));
+     .      1   78:       retValue = SortedList_length(list);
+     .      .   79:       __sync_lock_release(&spinLock);
+     .      .   80:       break;
+     .      .   81:       
+     .      .   82:     default:
+     .      .   83:       retValue = SortedList_length(list);
+     .      .   84:       break;
+     .      .   85:   }
+     .      .   86:   if (retValue == -1) {
+     .      .   87:     fprintf(stderr, "Error while fetching list length; list corrupted.\n");
+     .      .   88:     exit(2);
+     .      .   89:   }
+     .      .   90:   
+     .      .   91:   for (int i = threadNum; i < numElements; i += numThreads) {
+     .      .   92:     switch (syncArg) {
+     .      .   93:       case 'm':
+     .      .   94: 	pthread_mutex_lock(&mutex);
+     .      .   95: 	lookupAndDelete(i);
+     .      .   96: 	pthread_mutex_unlock(&mutex);
+     .      .   97: 	break;
+     .      .   98: 
+     .      .   99:       case 's':
+  1564   1564  100: 	while(__sync_lock_test_and_set(&spinLock, 1));
+     1     31  101: 	lookupAndDelete(i);
+     .      .  102: 	__sync_lock_release(&spinLock);
+     .      .  103: 	break;
+     .      .  104: 
+     .      .  105:       default:
+     .      .  106: 	lookupAndDelete(i);
+     .      .  107: 	break;
+     .      .  108:     }
+     .      .  109:   }
+     .      .  110:   return NULL;
+     .      .  111: }
+---
+     .      .  112: 
+     .      .  113: int main (int argc, char *argv[]) {
+     .      .  114:   //setup signal handler
+     .      .  115:   signal(SIGSEGV, signal_callback_handler);
+     .      .  116:   
+ROUTINE ====================== threadFunc in /u/cs/ugrad/sevo/111CS/2Project/lab2_list.c
+  3231   3290 Total samples (flat / cumulative)
+     .      .   40:     fprintf(stderr, "Error while deleting element; list corrupted.\n");
+     .      .   41:     exit(2);
+     .      .   42:   }
+     .      .   43: }
+     .      .   44: 
+---
+     .      .   45: void* threadFunc (void *index) {
+     .      .   46:   int threadNum = *((int*)index);
+     .      .   47:   
+     .      .   48:   for (int i = threadNum; i < numElements; i += numThreads) {
+     .      .   49:     switch (syncArg) {
+     .      .   50:       case 'm':
+     .      .   51:         pthread_mutex_lock(&mutex);
+     .      .   52:         SortedList_insert(list, &listElements[i]);
+     .      .   53:         pthread_mutex_unlock(&mutex);
+     .      .   54:         break;
+     .      .   55: 
+     .      .   56:       case 's':
+  1660   1660   57:         while(__sync_lock_test_and_set(&spinLock, 1));
+     .     28   58:         SortedList_insert(list, &listElements[i]);
+     .      .   59:         __sync_lock_release(&spinLock);
+     .      .   60:         break;
+     .      .   61: 
+     .      .   62:       default:
+     .      .   63:         SortedList_insert(list, &listElements[i]);
+     .      .   64:         break;
+     .      .   65:     }
+     .      .   66:   }
+     .      .   67: 
+     .      .   68:   int retValue = 0;
+     .      .   69:   switch (syncArg) {
+     .      .   70:     case 'm':
+     .      .   71:       pthread_mutex_lock(&mutex);
+     .      .   72:       retValue = SortedList_length(list);
+     .      .   73:       pthread_mutex_unlock(&mutex);
+     .      .   74:       break;
+     .      .   75:       
+     .      .   76:     case 's':
+     6      6   77:       while(__sync_lock_test_and_set(&spinLock, 1));
+     .      1   78:       retValue = SortedList_length(list);
+     .      .   79:       __sync_lock_release(&spinLock);
+     .      .   80:       break;
+     .      .   81:       
+     .      .   82:     default:
+     .      .   83:       retValue = SortedList_length(list);
+     .      .   84:       break;
+     .      .   85:   }
+     .      .   86:   if (retValue == -1) {
+     .      .   87:     fprintf(stderr, "Error while fetching list length; list corrupted.\n");
+     .      .   88:     exit(2);
+     .      .   89:   }
+     .      .   90:   
+     .      .   91:   for (int i = threadNum; i < numElements; i += numThreads) {
+     .      .   92:     switch (syncArg) {
+     .      .   93:       case 'm':
+     .      .   94: 	pthread_mutex_lock(&mutex);
+     .      .   95: 	lookupAndDelete(i);
+     .      .   96: 	pthread_mutex_unlock(&mutex);
+     .      .   97: 	break;
+     .      .   98: 
+     .      .   99:       case 's':
+  1564   1564  100: 	while(__sync_lock_test_and_set(&spinLock, 1));
+     1     31  101: 	lookupAndDelete(i);
+     .      .  102: 	__sync_lock_release(&spinLock);
+     .      .  103: 	break;
+     .      .  104: 
+     .      .  105:       default:
+     .      .  106: 	lookupAndDelete(i);
+     .      .  107: 	break;
+     .      .  108:     }
+     .      .  109:   }
+     .      .  110:   return NULL;
+     .      .  111: }
+---
+     .      .  112: 
+     .      .  113: int main (int argc, char *argv[]) {
+     .      .  114:   //setup signal handler
+     .      .  115:   signal(SIGSEGV, signal_callback_handler);
+     .      .  116:   
