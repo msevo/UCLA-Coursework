@@ -1,23 +1,5 @@
 Multithreaded program written in C to maximize efficiency of linked list operations, while testing race conditions and synchronization.
 
-QUESTION 2.3.1)
-In the 1 and 2-thread synchronized list cases, most of the cpu cycles are being spent on code in the critical sections. Because there are only 1 or 2 threads, not a lot of cycles are actually spent on threads waiting for the locks, but within the 1000 iteration loops of the critical sections themselves.
-In the high-thread spin-lock tests, most of the cycles are being spent on threads waiting to get the lock to access the critical section. Because there are so many threads, there is a lot of competition to get the locks, and since spin-locks continuously ask for the lock while waiting instead of sleeping, many cpu cycles are wasted on this.
-In the high-thread mutex tests, most of the cycles are being spent on the cpu switching contexts. Since threads are put to sleep when asking for a lock that's held with mutexes, cycles aren't wasted on these threads continuously asking for the lock like with spin locks, but instead on the actual overhead it takes to switch between threads.
-
-QUESTION 2.3.2)
-With a large number of threads in the spin-lock version of the list exerciser, most of the cpu cycles are spent on the one line while-loop code that continuously asks for a lock until it is released. With large thread numbers, there is a lot of competition for the locks on critical sections, so most of these threads are doing no actual work but simply wasting cycles constatly asking for the lock, making this a very expensive operation.
-
-QUESTION 2.3.3)
-With increasing numbers of threads, there is more competition to get the mutex around critical sections, which means that more threads end up waiting to get a hold of the mutex, increasing the average lock-wait time. With very high thread numbers, these threads simply keep adding to this wait time, which is why it increases so dramatically.
-The completion time per operation also increases with more threads because more time is spent on context switches between threads, which is included in the time per operation calculation and therefore increasing it.
-With increasing numbers of threads, more competition for the mutex causes these threads to increase the wait-time. However, this doesn't affect the actual time it takes for the work to be completed (besides context switching overhead) since only one thread is working on a critical section at a time. So although more threads are waiting, increasing lock-wait time, this doesn't increase the completion time (again, only minimal things like context switching does).
-
-QUESTION 2.3.4)
-With an increasing number of lists, each list becomes smaller and the probability that threads will have to compete for access to it becomes smaller, therefore increasing multithreaded performance and throughput.
-The throughput should continue increasing as the number of lists is increased until each thread has its own list (or nearly every thread) and competition for memory between threads is basically eliminated. At this point, more lists wouldn't continue increasing throughput since every thread will almost always be busy doing work and not waiting.
-According to the curves I created, an N-way partitioned list does not always have equivalent throughput of a single list with (1/N) fewer threads. In most cases (other than when there is 1 thread), a larger number of lists will almost always result in more throughput than a single list, regardless of the number of threads.
-
 File Descriptions
 lab2_list.c: C source file that implements a multithreaded program that adds and removed elements from a linked list, allowing us to test race conditions and synchronization. Also has option to divide list into sublists for increased multithreaded performance.
 
